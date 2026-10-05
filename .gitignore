@@ -1,6 +1,4 @@
 __pycache__/
 *.pyc
-DATA/SAVE/
-DATA/*.bak
+DATA/SAVE/*.bak
 dgVoodoo.conf.*bak*
-Hazard.exe.preclamp

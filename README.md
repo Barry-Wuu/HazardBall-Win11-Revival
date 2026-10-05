@@ -6,8 +6,13 @@
 > 2004 年发行。玩家操控一颗弹珠在各种机关迷宫中滚动，多人模式支持同屏对战。
 
 ```
-双击 Hazard.exe
+双击 Hazard.exe        # 直接开始玩
+双击 选关器.bat       # 自由选关（冒险 20 关 / 双人 10 关）
 ```
+
+> **选关器**：`DATA\SAVE\` 下的存档记录"下一关关号"，原版只能靠通关逐关推进。
+> `选关器.bat` 提供图形化选单（单键操作，附全部关卡名），一键改写存档跳到任意关。
+> 需配合问题 5 的**存档校验补丁**使用。
 
 ## ★ 修复内容
 
@@ -16,6 +21,7 @@
 | 1 | **coop10「TEMPLE OF DOOM」双人出生点残缺** | 补齐两个 2×2 起点块的左上角 | ✅ |
 | 2 | **Tilt and Roll 模式需要 PS3 六轴手柄才能跳跃** | 空格键代替「抬起传感器」 | ✅ |
 | 3 | **窗口模式下鼠标坐标错位 → 光标分身 / 点哪都出界** | 根因定位并给出正解 | ✅ |
+| 4 | **冒险 / 双人模式无选关机制，必须逐关通关推进** | 提供选关器（30 份存档） | ✅ |
 
 ---
 
@@ -156,7 +162,9 @@ Tilt and Roll 模式（游戏状态 25）需要一款 **PS3 SIXAXIS 六轴手柄
 ├── DATA/                      # 127 张 .map + 全部 WAV 音效
 │   └── coop10.map(.orig)      # ★出生点修复版 + 原版备份
 ├── CUSTOM_MAPS/               # 11 张社区关卡
-├── tools/                     # 可复现工具链（21 个脚本）
+├── 选关器.bat                 # ★关卡选择（冒险 20 关 / 双人 10 关）
+├── DATA/SAVE/                 # 存档：当前进度 + 30 份选关存档库
+├── tools/                     # 可复现工具链（26 个脚本）
 └── docs/                      # 逆向结论文档（3 篇）
 ```
 
@@ -186,6 +194,10 @@ Tilt and Roll 模式（游戏状态 25）需要一款 **PS3 SIXAXIS 六轴手柄
 | `fix_clamp.py` | clamp 窗口相对化（**实验性，未启用**，见问题 3 说明） |
 | `pin_window.py` | 把窗口钉到 (0,0)（`--show` / `--once` / 常驻） |
 | `revert.py` / `revert_clamp.py` | 一键还原（全部 / 仅 clamp 补丁） |
+| `patch_skip_savecheck.py` | **跳过存档校验补丁**（选关器前提，14 字节） |
+| `make_coop_saves.py` | 生成双人模式 10 份存档 / 切换 / 列出 |
+| `make_adventure_saves.py` | 生成冒险模式 20 份存档 / 切换 / 列出 |
+| `analyze_2up.py` | 解析 2UP GAME.sav 字段布局 |
 
 依赖：Python 3.11+；`pip install capstone keystone-engine`（仅打补丁时需要）。
 
@@ -201,7 +213,11 @@ python tools/fix_coop10.py
 # 3. 从 Hazard.exe.orig 重新生成跳跃补丁
 python tools/build_patch.py
 
-# 4. 一键还原全部补丁
+# 4. 重新生成选关存档库
+python tools/make_coop_saves.py gen
+python tools/make_adventure_saves.py gen
+
+# 5. 一键还原全部补丁（含存档校验）
 python tools/revert.py
 ```
 
@@ -212,6 +228,7 @@ python tools/revert.py
 - [x] Tilt and Roll 空格跳跃（含「按住方向键也能跳」）
 - [x] 窗口模式鼠标坐标错位根因定位（光标分身 / 点哪都出界 / 闪烁）
 - [x] Win11 可玩版本（dgVoodoo2 2.87，窗口模式 640×480）
+- [x] **冒险 / 双人模式选关器**（30 份存档 + 存档校验跳过补丁）
 - [ ] 窗口居中方案（坐标转换层 `GetCursorPos`/`SetCursorPos` hook，待定）
 - [ ] 倾斜传感器模式：保留手柄路径 + 空格并存
 - [ ] 其余 126 张地图的完整性普查
@@ -221,3 +238,81 @@ python tools/revert.py
 本项目为**技术研究与数字保存**用途。Hazard Ball 及其全部资产版权归原作者
 **Chris Eastwood** 所有。本仓库对失传/难以获取的旧平台资产做保存性归档，
 并记录完整的逆向工程结论。
+
+
+---
+
+## 问题 5：选关器（冒险 / 双人模式跳关）
+
+### 背景
+原版**没有选关菜单**。冒险模式（ADVENTURE，20 关）与双人模式（CO-OPERATIVE，10 关）
+都只有 `RESUME GAME` 读档，存档记录"下一关关号"，**必须逐关通关**才能推进。
+
+### 存档格式（实测 `BARRY.sav` / `2UP GAME.sav`，两者同构）
+```
+24 字节 = 6 × int32
+  +0   下一关关号        打通第 1 关 → 2
+  +4   固定 4
+  +8   累计成绩
+  +12  校验位 A      ┐ 基准取自运行时内存，
+  +16  校验位 B      ┘ 离线算不出合法值(见下)
+  +20  模式标识      冒险 = 1, 双人 = 2
+```
+
+### 关键障碍：校验基准在运行时
+读档函数 `0x411990` 做双重校验：
+
+```
+0x411A4A  ecx ^= 0xE0301
+0x411A5F  eax ^= 0xE0301
+0x411A59  ecx = [0x44DC30]        ; ← 运行时基准，非存档字段
+0x411A64  edx = 0xFFFEE2B3 - ecx
+0x411A69  cmp eax, edx
+0x411A6F  je  成功
+          mov [0x44DC30], 1        ; 失败: 标记存档无效 → 关号清零 → 回第 1 关
+```
+
+基准 `[0x44DC30]` / `[0x44B5A8]` 由**上一次成功存档时**的游戏运行时写入，
+**离线无法算出合法存档** —— 手改 `+0` 必被判定无效并回退到第 1 关。
+
+### 修法：跳过校验（`tools/patch_skip_savecheck.py`）
+把三处"通过才跳过失败块"的 `je` 改成 `jmp`，使校验恒为通过：
+
+| 地址 | 原 | 新 |
+|---|---|---|
+| `0x411A6F` | `74 11` (je) | `EB 11` (jmp) |
+| `0x411A94` | `74 0C` (je) | `EB 0C` (jmp) |
+| `0x411ACB` | `c7 05 30 dc 44 00 01 00 00 00` | `90`×10 (nop) |
+
+共 14 字节。`Hazard.exe.orig` 为未打补丁的原版（存档校验已恢复）。
+
+### 选关器
+`选关器.bat`（GBK + CRLF，单键操作，菜单附全部关卡名）：
+
+```
+主菜单 ── [A] 冒险模式  level1 ~ level20
+       └ [C] 双人模式  coop1  ~ coop10
+              └ [Q] 退出
+```
+
+- 冒险 20 关分两屏（1-10 / 11-20），11-20 通过 `M` 进入
+- `R` 重置冒险进度回第 1 关
+- 存档库：`DATA/SAVE/saves_adv/adv1~20.sav`、`DATA/SAVE/saves/coop1~10.sav`
+- 每次切换自动备份当前存档到 `*.sav.bak`
+
+### 附：`times.dat`（960 字节 = 60 条 × 16 字节）
+**排行榜**，与解锁无关。每条：时间戳 + 玩家名(8B) + 成绩(float)，`EMPTY` = 未上榜。
+
+### 20 个单关关名
+| 关 | 关名 | 关 | 关名 |
+|---|---|---|---|
+| 1 | MEMORIES | 11 | AVALANCHE |
+| 2 | BACKLASH | 12 | PERILOUS SKI SLOPE |
+| 3 | DESERT TOWER | 13 | BOMB CHASE |
+| 4 | HEAT WAVE | 14 | METALLIC FORTRESS |
+| 5 | SWAMP OUTPOST | 15 | ACID LEAK |
+| 6 | ELEMENTAL RACE | 16 | CLOSED DOORS |
+| 7 | FLOODED CITADEL | 17 | LAVA NIGHT |
+| 8 | ABANDONED STONGHOLD | 18 | MARBLE ISLANDS |
+| 9 | ICE BERG DILEMMA | 19 | OBLIVIOUS SPEEDWAY |
+| 10 | SNOW BALL CAPER | 20 | WARPED TEMPLE OF DOOM |

@@ -1,0 +1,3 @@
+# 选关器.bat 含中文, 必须存 GBK + CRLF 原样入库。
+# 若用 text 规范化, checkout 会变 LF-only, cmd 按 cp936 分词时会把中文行切碎。
+*.bat -text
