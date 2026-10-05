@@ -1,8 +1,9 @@
 # Hazard Ball Win11 Revival
 
-把 2004 年的弹珠物理游戏 **Hazard Ball** 复活到现代 Windows（Win11）。
+<b>简体中文</b> ｜ <a href="README.en.md">English</a>
+> **📦 完整可运行整合包 `HazardBall-Win11-Revival-v1.0.zip`（13.5 MB / 235 文件）已移入 [Releases](https://gitcode.com/Barry_Wu_/HazardBall-Win11-Revival/releases)，不再存放在仓库根目录。需要 Windows 版请从发行版页面下载。**
 
-> **[English version →](README_EN.md)**
+把 2004 年的弹珠物理游戏 **Hazard Ball** 复活到现代 Windows（Win11）。
 
 > Hazard Ball（aka **Hazard：Chris' Golf Ball Puzzle**）是英国开发者 Chris Eastwood 的作品，
 > 2004 年发行。玩家操控一颗弹珠在各种机关迷宫中滚动，多人模式支持同屏对战。

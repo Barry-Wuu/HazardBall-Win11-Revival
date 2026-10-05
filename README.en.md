@@ -1,12 +1,16 @@
-# Hazard Ball Win11 Revival (English)
+# Hazard Ball — Win11 Revival
+
+<a href="README.md">简体中文</a> ｜ <b>English</b>
+> **📦 The complete runnable build `HazardBall-Win11-Revival-v1.0.zip` (13.5 MB / 235 files) has been moved to [Releases](https://gitcode.com/Barry_Wu_/HazardBall-Win11-Revival/releases); it is no longer in the repo root. Download it from the Releases page.**
 
 Bringing **Hazard Ball** (2004) back to life on modern Windows 11.
 
 > Hazard Ball (aka **Hazard: Chris' Golf Ball Puzzle**) is a marble-physics puzzle game by
 > British developer **Chris Eastwood**, released in 2004. You roll a ball through mechanical
-> mazes;multiplayer mode supports same-screen versus play.
+> mazes; multiplayer mode supports same-screen versus play.
 
-**中文版 README 见 [`README.md`](README.md)（内容更全，含 3 篇逆向文档的中文原文）。**
+> The Chinese README ([`README.md`](README.md)) is more complete — it carries the original
+> Chinese write-ups of all three reverse-engineering documents.
 
 ```
 Double-click Hazard.exe        # just play
