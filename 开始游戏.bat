@@ -1,7 +1,7 @@
 @echo off
 chcp 936 >nul
 title Hazard Ball
-cd /d "%~dp0game"
+cd /d "%~dp0"
 if not exist "Hazard.exe" (
     echo [¥ÌŒÛ] Œ¥’“µΩ Hazard.exe
     pause

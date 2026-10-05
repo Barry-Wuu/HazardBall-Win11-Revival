@@ -43,7 +43,7 @@
 两个起点块被第 57 列的岩浆隔开——正是残缺导致的死亡夹角。
 
 ### 修复
-`tools/fix_coop10.py`：只改 terrain 两格（文件偏移 2093 / 2096），原版备份为 `game/DATA/coop10.map.orig`。
+`tools/fix_coop10.py`：只改 terrain 两格（文件偏移 2093 / 2096），原版备份为 `DATA/coop10.map.orig`。
 
 验证：修复后 `scan_ck.py` 报「全部 coop 地图起点均为完整 2×2」。
 
@@ -147,16 +147,15 @@ Tilt and Roll 模式（游戏状态 25）需要一款 **PS3 SIXAXIS 六轴手柄
 ## 仓库结构
 
 ```
-├── game/                      # 可直接运行的完整游戏目录
-│   ├── Hazard.exe             # ★已打跳跃补丁（175 字节差异）
-│   ├── Hazard.exe.orig        # 原版 exe（回滚用）
-│   ├── dgVoodoo.conf          # Win11 运行配置（窗口模式）
-│   ├── D3D8/9.dll DDraw.dll D3DImm.dll   # dgVoodoo2 2.87 转接层
-│   ├── dgVoodooCpl.exe        # dgVoodoo 控制面板
-│   ├── HazEd.exe              # 关卡编辑器
-│   ├── DATA/                  # 127 张 .map + 全部 WAV 音效
-│   │   └── coop10.map(.orig)  # ★出生点修复版 + 原版备份
-│   └── CUSTOM_MAPS/           # 11 张社区关卡
+├── Hazard.exe                 # ★已打跳跃补丁（175 字节差异）
+├── Hazard.exe.orig            # 原版 exe（回滚用）
+├── dgVoodoo.conf              # Win11 运行配置（窗口模式）
+├── D3D8.dll D3D9.dll DDraw.dll D3DImm.dll   # dgVoodoo2 2.87 转接层
+├── dgVoodooCpl.exe            # dgVoodoo 控制面板
+├── HazEd.exe                  # 关卡编辑器
+├── DATA/                      # 127 张 .map + 全部 WAV 音效
+│   └── coop10.map(.orig)      # ★出生点修复版 + 原版备份
+├── CUSTOM_MAPS/               # 11 张社区关卡
 ├── tools/                     # 可复现工具链（21 个脚本）
 ├── docs/                      # 逆向结论文档（3 篇）
 └── 开始游戏.bat               # 一键启动

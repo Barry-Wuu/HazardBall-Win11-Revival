@@ -1,6 +1,6 @@
 __pycache__/
 *.pyc
-game/DATA/SAVE/
-game/DATA/*.bak
-game/dgVoodoo.conf.*bak*
-game/Hazard.exe.preclamp
+DATA/SAVE/
+DATA/*.bak
+dgVoodoo.conf.*bak*
+Hazard.exe.preclamp

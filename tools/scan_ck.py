@@ -18,7 +18,7 @@
 import os, re, struct, sys
 
 DATA = sys.argv[1] if len(sys.argv) > 1 else os.path.join(
-    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'game', 'DATA')
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))), 'DATA')
 
 def parse(path):
     """.map 结构: tileset\\n + w,h,tw,th(u16 x4) + name\\n + level(i16) + terrain[w*h] + cells[w*h*2]"""
