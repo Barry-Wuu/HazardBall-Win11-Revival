@@ -47,27 +47,54 @@ COOP_COUNT = 10
 
 
 # ---------------------------------------------------------------- 存档构造
-
-# 各字段固定值(实测同模式内除 +0 外完全一致)
+#
+# 24 字节 = 6 × int32，实测字段布局（由 Hazard.exe 读档函数 0x4118C8 确认）：
+#   +0   下一关关号        打通第 1 关 → 2
+#   +4   lives（剩余生命）   0x4119FA 处 push 0x44B5A8 + fread 4 字节，
+#                          运行时 lives 变量就是 [0x44B5A8]；满值实测为 4
+#   +8   累计成绩           运行时 [0x44BC8C]（41 处引用，参与分数动画运算）
+#   +12  校验位 A       ┐ 基准取自运行时内存，离线算不出合法值
+#   +16  校验位 B       ┘ (需配合 exe 的跳过校验补丁)
+#   +20  模式标识         冒险 = 1，双人 = 2
+#
+# 末位(模式标识)与两个校验位是定值；关号与 lives 可调。
 ADV_TAIL = (4, 47573, -990800, -948794, 1)     # 末位 1 = 冒险模式
 COOP_TAIL = (4, 68830, -990799, -948793, 2)    # 末位 2 = 双人模式
 
+DEFAULT_LIVES = 4
+LIVES_MIN, LIVES_MAX = 1, 99
 
-def build_save(level, tail):
-    """构造指定关号的 24 字节存档"""
-    return struct.pack('<i', level) + struct.pack('<5i', *tail)
+
+def build_save(level, tail, lives=None):
+    """构造存档。lives 为 None 时沿用 tail 里自带的值"""
+    f = list(tail)
+    if lives is not None:
+        f[0] = int(lives)                    # +4 就是 lives
+    return struct.pack('<i', level) + struct.pack('<5i', *f)
+
+
+def read_ints(path):
+    """读存档全部 6 个 int32; 读不到返回 None"""
+    try:
+        with open(path, 'rb') as f:
+            data = f.read(24)
+        if len(data) < 24:
+            return None
+        return struct.unpack_from('<6i', data, 0)
+    except OSError:
+        return None
 
 
 def read_level(path):
     """读取存档里的关号; 读不到返回 None"""
-    try:
-        with open(path, 'rb') as f:
-            data = f.read(4)
-        if len(data) < 4:
-            return None
-        return struct.unpack_from('<i', data, 0)[0]
-    except OSError:
-        return None
+    v = read_ints(path)
+    return None if v is None else v[0]
+
+
+def read_lives(path):
+    """读取存档里的 lives（+4）; 读不到返回 None"""
+    v = read_ints(path)
+    return None if v is None else v[1]
 
 
 def game_running():
@@ -101,8 +128,8 @@ def game_running():
     return False
 
 
-def apply_save(mode, level):
-    """把指定模式切到指定关。返回 (成功, 提示)"""
+def apply_save(mode, level, lives=None):
+    """把指定模式切到指定关，可选同时改 lives。返回 (成功, 提示)"""
     if mode == 'adv':
         target, tail, label = SAV_BARRY, ADV_TAIL, '冒险模式'
     else:
@@ -124,11 +151,14 @@ def apply_save(mode, level):
 
     try:
         with open(target, 'wb') as f:
-            f.write(build_save(level, tail))
+            f.write(build_save(level, tail, lives))
     except OSError as e:
         return False, '写入失败:\n%s' % e
 
-    return True, '%s 已切到 level %d' % (label, level)
+    msg = '%s 已切到 level %d' % (label, level)
+    if lives is not None:
+        msg += '，lives = %d' % int(lives)
+    return True, msg
 
 
 # ---------------------------------------------------------------- 界面
@@ -171,12 +201,22 @@ class App:
         top.pack(fill='x', padx=20, pady=(18, 2))
         tk.Label(top, text='HAZARD BALL', bg=BG, fg=TEXT,
                  font=self.f_title).pack(anchor='w')
-        tk.Label(top, text='关卡选择', bg=BG, fg=SUB,
+        tk.Label(top, text='关卡选择 · 生命数', bg=BG, fg=SUB,
                  font=self.f_small).pack(anchor='w')
 
         self.status = tk.Label(root, text='', bg=PANEL, fg=NOW,
                                font=self.f_sec, anchor='w', padx=16, pady=10)
         self.status.pack(fill='x', padx=20, pady=(12, 4))
+
+        # lives 设置行
+        bar = tk.Frame(root, bg=PANEL)
+        bar.pack(fill='x', padx=20, pady=(4, 0))
+        tk.Label(bar, text='LIVES', bg=PANEL, fg=SUB,
+                 font=self.f_small).pack(side='left', padx=(16, 8))
+        self.lv_adv = self._lives_box(bar, 'adv')
+        tk.Label(bar, text='双人', bg=PANEL, fg=SUB,
+                 font=self.f_small).pack(side='left', padx=(20, 8))
+        self.lv_coop = self._lives_box(bar, 'coop')
 
         self._section(root, 'ADVENTURE', '冒险模式', ADV_COUNT,
                       'adv', self.adv_cards, 5)
@@ -189,6 +229,28 @@ class App:
                  text=('切换后启动游戏 → 主菜单选对应模式 → RESUME GAME\n'
                        '写入前自动备份为 *.sav.bak　·　选 1 即从第一关重新开始'
                        )).pack(anchor='w')
+
+    def _lives_box(self, parent, mode):
+        """一组 lives 微调按钮 + 数值显示"""
+        frm = tk.Frame(parent, bg=PANEL)
+        frm.pack(side='left')
+        var = {'v': DEFAULT_LIVES}
+        lbl = tk.Label(frm, text=str(DEFAULT_LIVES), bg=CARD, fg=TEXT,
+                       font=self.f_sec, width=4, pady=1)
+
+        def setv(d):
+            v = max(LIVES_MIN, min(LIVES_MAX, var['v'] + d))
+            var['v'] = v
+            lbl.configure(text=str(v), bg=CARD_HI, fg='#ffffff')
+            self.root.after(700, lambda: lbl.configure(bg=CARD, fg=TEXT))
+
+        for d, txt in ((-1, '−'), (1, '+')):
+            b = tk.Label(frm, text=txt, bg=CARD, fg=TEXT, font=self.f_sec,
+                         width=2, cursor='hand2', pady=1)
+            b.pack(side='left', padx=2)
+            b.bind('<Button-1>', lambda e, dd=d: setv(dd))
+        lbl.pack(side='left', padx=(4, 0))
+        return var
 
     def _section(self, parent, en, cn, count, mode, store, cols):
         box = tk.Frame(parent, bg=PANEL)
@@ -223,25 +285,30 @@ class App:
     # ---------------------------------------------------------- 交互
 
     def on_click(self, mode, level):
-        ok, msg = apply_save(mode, level)
+        lives = (self.lv_adv if mode == 'adv' else self.lv_coop)['v']
+        ok, msg = apply_save(mode, level, lives)
         if not ok:
             messagebox.showwarning('无法切换', msg, parent=self.root)
             return
         self.refresh()
+        label = '冒险模式' if mode == 'adv' else '双人模式'
         messagebox.showinfo(
             '已切换',
-            '%s  →  level %d\n\n现在启动游戏, 主菜单选该模式 → RESUME GAME'
-            % (msg.split(' 已切到 ')[0], level),
+            '%s  →  level %d　lives %d\n\n现在启动游戏, 主菜单选该模式 → RESUME GAME'
+            % (label, level, lives),
             parent=self.root)
 
     def refresh(self):
-        cur_adv = read_level(SAV_BARRY)
-        cur_coop = read_level(SAV_2UP)
-        self.status.configure(text='当前进度　冒险 %s　　双人 %s'
-                              % (self._fmt(cur_adv, ADV_COUNT),
-                                 self._fmt(cur_coop, COOP_COUNT)))
-        self._mark(self.adv_cards, cur_adv)
-        self._mark(self.coop_cards, cur_coop)
+        adv = read_ints(SAV_BARRY)
+        coop = read_ints(SAV_2UP)
+        self.status.configure(
+            text='当前进度　冒险 %s (lives %s)　　双人 %s (lives %s)'
+            % (self._fmt(None if adv is None else adv[0], ADV_COUNT),
+               '-' if adv is None else adv[1],
+               self._fmt(None if coop is None else coop[0], COOP_COUNT),
+               '-' if coop is None else coop[1]))
+        self._mark(self.adv_cards, None if adv is None else adv[0])
+        self._mark(self.coop_cards, None if coop is None else coop[0])
 
     @staticmethod
     def _fmt(level, total):

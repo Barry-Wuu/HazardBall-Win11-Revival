@@ -14,7 +14,8 @@ Bringing **Hazard Ball** (2004) back to life on modern Windows 11.
 
 ```
 Double-click Hazard.exe        # just play
-Double-click 选关器.exe       # level selector (Adventure 20 levels / Co-op 10 levels)
+Double-click 选关器.exe       # level selector + lives (Adventure 20 / Co-op 10)
+Double-click 关闭Windows辅助键.py   # one-shot: permanently disable StickyKeys & co-op
 ```
 
 > The level selector is a tkinter GUI: **green card = current level in your save file**;
@@ -185,8 +186,8 @@ file, so you must **clear every level in order** to advance.
 ```
 24 bytes = 6 × int32
   +0   next level number      clear level 1 → 2
-  +4   fixed 4
-  +8   cumulative score
+  +4   lives                  full value 4, adjustable 1–99 (runtime [0x44B5A8])
+  +8   cumulative score       runtime [0x44BC8C], 41 references, feeds the score animation
   +12  checksum slot A     ┐ baselines are read from RUNTIME memory,
   +16  checksum slot B     ┘ so a valid save cannot be computed offline (see below)
   +20  mode marker         Adventure = 1, Co-op = 2
@@ -237,9 +238,32 @@ ADVENTURE   Adventure · 20 levels      CO-OPERATIVE  Co-op · 10 levels
 
 - **Green card** = current level in the save file, read on startup
 - Click any number to switch; the status bar refreshes after confirmation
+- The `LIVES` row at the top adjusts remaining lives, one group per mode, range 1–99
 - The previous save is backed up to `*.sav.bak` before writing
 - Refuses to switch while the game is running (the save file may be locked)
 - Choose `1` to start over from the first level
+
+> **Lives is the `+4` field of the save** (not a constant). Evidence: at `0x4119F5` in the load
+> routine, `push 0x44B5A8` followed by an fread of 4 bytes — and `[0x44B5A8]` is the runtime
+> global holding lives. All 30 bundled save templates have 4 there (the full-lives default).
+
+> ⚠️ **Co-op mode requires disabling the Windows accessibility keys first.** Two players means
+> two direction keys held at once, which trips FilterKeys — a feature whose whole purpose is
+> to ignore key order — and the resulting popup interrupts play. Run `关闭Windows辅助键.py`; it
+> sets bit 0 of four `Flags` values under `HKCU\Control Panel\Accessibility` (that bit is
+> inverted: 0 = enabled):
+>
+> | Feature | Subkey | Before | After |
+> |---|---|---|---|
+> | FilterKeys | `Keyboard Response` | 126 | **127** |
+> | StickyKeys | `StickyKeys` | 506 | **507** |
+> | ToggleKeys | `ToggleKeys` | 62 | **63** |
+> | MouseKeys | `MouseKeys` | 62 | **63** |
+>
+> The script takes `--show` and `--restore`. It writes the registry only — a login is required
+> for it to take full effect, and you must **not** try to broadcast via
+> `SystemParametersInfoW` (the SPI numbering interleaves GET and SET; passing the wrong
+> structure size segfaults the caller).
 
 **Why not a .bat**: cmd scripting here fights GBK encoding, `cp936` tokenization, and the conflict
 between single-keystroke input and two-digit numbers. `choice`'s errorlevel values are very easy
@@ -282,8 +306,9 @@ A **leaderboard**, unrelated to unlocking. Each entry: timestamp + player name (
 ├── DATA/                      # 127 .map files + all WAV sounds
 │   └── coop10.map(.orig)      # ★fixed spawn blocks + original backup
 ├── CUSTOM_MAPS/               # 11 community levels
-├── 选关器.exe                 # ★level selector (Adventure 20 / Co-op 10)
+├── 选关器.exe                 # ★level selector + lives (Adventure 20 / Co-op 10)
 ├── 选关器.py                  # same, as source (run with python if no exe)
+├── 关闭Windows辅助键.py        # ★permanently disable StickyKeys/FilterKeys/ToggleKeys/MouseKeys
 ├── DATA/SAVE/                 # current progress + 30 level-select saves
 ├── tools/                     # reproducible toolchain (26 scripts)
 └── docs/                      # reverse-engineering notes (3 documents)
@@ -319,6 +344,7 @@ A **leaderboard**, unrelated to unlocking. Each entry: timestamp + player name (
 | `make_coop_saves.py` | Generate / switch / list the 10 Co-op saves |
 | `make_adventure_saves.py` | Generate / switch / list the 20 Adventure saves |
 | `analyze_2up.py` | Parse the `2UP GAME.sav` field layout |
+| `../关闭Windows辅助键.py` | Permanently disable the four Windows accessibility keys |
 
 Requirements: Python 3.11+; `pip install capstone keystone-engine` (only needed for building patches).
 
