@@ -1,5 +1,0 @@
-# .bat 必须 -text: 仓库里存 CRLF 原样, 否则 checkout 变 LF-only
-# 会让中文 .bat 在 cp936 控制台下按错误代码页分词, 中文行被切碎成命令。
-*.bat -text
-*.md  text
-*.py  text
