@@ -22,6 +22,11 @@
 > `选关器.exe`（tkinter 图形界面）一键改写存档跳到任意关，显示当前进度并高亮所在关卡。
 > 需配合问题 5 的**存档校验补丁**使用。
 
+> **⚠️ GitHub 附件不可用**：GitHub 的 release 资产上传端点在本账号下会把 multipart 包装层
+> 原样存成文件，v1.0/v1.1 的 `.zip` 附件均已损坏并删除。**请到 GitCode 下载开箱即用包**：
+> https://gitcode.com/Barry_Wu_/HazardBall-Win11-Revival/releases
+> （已逐字节校验，`PK\x03\x04` 魔数正常）。仓库根目录也放了一份 `HazardBall-Win11-Revival-v1.1.zip`。
+
 ## ★ 修复内容
 
 | # | 问题 | 修复 | 状态 |

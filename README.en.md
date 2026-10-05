@@ -294,6 +294,13 @@ A **leaderboard**, unrelated to unlocking. Each entry: timestamp + player name (
 
 ---
 
+> **⚠️ GitHub release assets are unusable**: on this account GitHub's release-asset upload
+> endpoint stores the raw multipart wrapper as the file, so the v1.0/v1.1 `.zip` assets came
+> out corrupt and have been removed. **Download the ready-to-run build from GitCode instead**:
+> https://gitcode.com/Barry_Wu_/HazardBall-Win11-Revival/releases
+> (verified byte-for-byte, correct `PK\x03\x04` magic). A copy also sits in the repo root as
+> `HazardBall-Win11-Revival-v1.1.zip`.
+
 ## Repository Layout
 
 ```
