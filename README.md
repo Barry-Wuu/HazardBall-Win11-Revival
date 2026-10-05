@@ -2,6 +2,8 @@
 
 把 2004 年的弹珠物理游戏 **Hazard Ball** 复活到现代 Windows（Win11）。
 
+> **[English version →](README_EN.md)**
+
 > Hazard Ball（aka **Hazard：Chris' Golf Ball Puzzle**）是英国开发者 Chris Eastwood 的作品，
 > 2004 年发行。玩家操控一颗弹珠在各种机关迷宫中滚动，多人模式支持同屏对战。
 
