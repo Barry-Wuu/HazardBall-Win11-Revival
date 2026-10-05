@@ -27,6 +27,12 @@
 > https://gitcode.com/Barry_Wu_/HazardBall-Win11-Revival/releases
 > （已逐字节校验，`PK\x03\x04` 魔数正常）。仓库根目录也放了一份 `HazardBall-Win11-Revival-v1.1.zip`。
 
+![coop10 双人模式通关实测：上下分屏 1-UP / 2-UP，四颗球与HUD 完整](shots/coop10-cleared.png)
+
+> **上图：双人模式末关 coop10「TEMPLE OF DOOM」实测通关。** 上下分屏是 1-UP 与 2-UP 各自的
+> 视角，四颗球都还在场上，HUD 里的命数、道具栏与计时都是原始未改的。
+> 这张图就是本仓库要修的那一关——原版的两个出生点各缺一角，缺口夹着岩浆，球一出生就卡死。
+
 ## ★ 修复内容
 
 | # | 问题 | 修复 | 状态 |
@@ -254,7 +260,6 @@ python tools/revert.py
 本项目为**技术研究与数字保存**用途。Hazard Ball 及其全部资产版权归原作者
 **Chris Eastwood** 所有。本仓库对失传/难以获取的旧平台资产做保存性归档，
 并记录完整的逆向工程结论。
-
 
 ---
 

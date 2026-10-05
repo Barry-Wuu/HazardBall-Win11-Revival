@@ -24,6 +24,14 @@ Double-click 关闭Windows辅助键.py   # one-shot: permanently disable StickyK
 
 ---
 
+![coop10 cleared in co-op mode: split-screen 1-UP / 2-UP, all four balls and the HUD intact](shots/coop10-cleared.png)
+
+> **Above: coop10 "TEMPLE OF DOOM" actually cleared.** The two viewports are the 1-UP and
+> 2-UP players, all four balls are still on the field, and the HUD (lives, item slots,
+> timer) is untouched original data.
+> This is the very level this repository fixes — in the original, each player's spawn block
+> is missing a corner with lava in the notch, so the balls are trapped the instant they appear.
+
 ## What Was Fixed
 
 | # | Problem | Fix | Status |
