@@ -1,0 +1,1 @@
+Place any Custom Maps (*.CMP) in this folder to use with Hazard Ball.
